@@ -35,7 +35,7 @@ function formatCurrency(amount) {
 function initMonthPicker() {
     const picker = document.getElementById('monthPicker');
     const now = new Date();
-    currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+    currentMonth = now.toISOString().slice(0, 7);
     picker.value = currentMonth;
     picker.addEventListener('change', function () {
         currentMonth = this.value;
@@ -51,6 +51,7 @@ function setSalary() {
     saveSalary(currentMonth, amount);
     input.value = '';
     render();
+    autoSaveCSV();
 }
 
 function editSalary() {
@@ -65,11 +66,10 @@ function addExpense(e) {
     e.preventDefault();
     const desc = document.getElementById('expenseDesc').value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount').value);
+    const category = document.getElementById('expenseCategory').value;
     const date = document.getElementById('expenseDate').value;
 
-    if (!desc || !amount || !date) return;
-
-    const category = desc.toLowerCase();
+    if (!desc || !amount || !category || !date) return;
 
     const expenses = getData(currentMonth);
     expenses.push({
@@ -81,12 +81,11 @@ function addExpense(e) {
     });
     saveData(currentMonth, expenses);
 
-    // Reset form
     document.getElementById('expenseForm').reset();
-    // Set date back to today
     document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
 
     render();
+    autoSaveCSV();
 }
 
 function deleteExpense(id) {
@@ -94,15 +93,11 @@ function deleteExpense(id) {
     expenses = expenses.filter(exp => exp.id !== id);
     saveData(currentMonth, expenses);
     render();
+    autoSaveCSV();
 }
 
 // --- CSV ---
-function downloadCSV() {
-    const expenses = getData(currentMonth);
-    const salary = getSalary(currentMonth);
-    if (expenses.length === 0) return;
-
-    // Sort by date
+function buildCSV(expenses, salary) {
     expenses.sort((a, b) => a.date.localeCompare(b.date));
 
     let runningTotal = 0;
@@ -117,7 +112,6 @@ function downloadCSV() {
         csv += `"${exp.date}","${exp.description}","${exp.category}",${exp.amount.toFixed(2)},${runningTotal.toFixed(2)},${remaining.toFixed(2)}\n`;
     });
 
-    // Add category summary
     csv += '\nCategory Summary\n';
     csv += 'Category,Total\n';
     Object.keys(categoryTotals).sort().forEach(cat => {
@@ -128,6 +122,28 @@ function downloadCSV() {
     csv += `Total Expenses,${runningTotal.toFixed(2)}\n`;
     csv += `Remaining,${(salary - runningTotal).toFixed(2)}\n`;
 
+    return csv;
+}
+
+function autoSaveCSV() {
+    const expenses = getData(currentMonth);
+    const salary = getSalary(currentMonth);
+    if (expenses.length === 0) return;
+
+    const csv = buildCSV([...expenses], salary);
+    fetch('/api/save-csv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month: currentMonth, csv })
+    }).catch(() => {});
+}
+
+function downloadCSV() {
+    const expenses = getData(currentMonth);
+    const salary = getSalary(currentMonth);
+    if (expenses.length === 0) return;
+
+    const csv = buildCSV([...expenses], salary);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -142,7 +158,6 @@ function render() {
     const salary = getSalary(currentMonth);
     const expenses = getData(currentMonth);
 
-    // Salary section
     if (salary > 0) {
         document.getElementById('salaryDisplay').classList.remove('hidden');
         document.getElementById('salaryForm').classList.add('hidden');
@@ -152,10 +167,8 @@ function render() {
         document.getElementById('salaryForm').classList.remove('hidden');
     }
 
-    // Sort expenses by date
     expenses.sort((a, b) => a.date.localeCompare(b.date));
 
-    // Calculate totals
     let totalExpenses = 0;
     const categoryTotals = {};
 
@@ -166,7 +179,6 @@ function render() {
 
     const remaining = salary - totalExpenses;
 
-    // Summary
     document.getElementById('summarySalary').textContent = formatCurrency(salary);
     document.getElementById('summaryExpenses').textContent = formatCurrency(totalExpenses);
     document.getElementById('summaryRemaining').textContent = formatCurrency(remaining);
@@ -178,7 +190,6 @@ function render() {
         remainingEl.classList.remove('negative');
     }
 
-    // Category breakdown
     const catContainer = document.getElementById('categoryBreakdown');
     const categories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
 
@@ -201,7 +212,6 @@ function render() {
         }).join('');
     }
 
-    // Expenses list
     const listContainer = document.getElementById('expensesList');
     const noExpenses = document.getElementById('noExpenses');
 
@@ -229,7 +239,6 @@ function render() {
         }).join('');
     }
 
-    // Set default date for expense form
     const dateInput = document.getElementById('expenseDate');
     if (!dateInput.value) {
         dateInput.value = new Date().toISOString().slice(0, 10);
@@ -240,4 +249,5 @@ function render() {
 document.addEventListener('DOMContentLoaded', function () {
     initMonthPicker();
     render();
+    autoSaveCSV();
 });
