@@ -178,6 +178,44 @@ select:focus {
     width: 100%;
 }
 
+.field-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #555;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.tag {
+    padding: 8px 16px;
+    border: 2px solid #e8eaed;
+    border-radius: 20px;
+    background: #fff;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tag:hover {
+    border-color: #4361ee;
+    color: #4361ee;
+}
+
+.tag.active {
+    background: #4361ee;
+    border-color: #4361ee;
+    color: #fff;
+}
+
 .form-row {
     display: flex;
     gap: 12px;

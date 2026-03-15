@@ -28,7 +28,7 @@ function saveSalary(month, amount) {
 }
 
 function formatCurrency(amount) {
-    return '$' + amount.toFixed(2);
+    return '\u20AC' + amount.toFixed(2);
 }
 
 // --- Month Picker ---
@@ -61,28 +61,41 @@ function editSalary() {
     document.getElementById('salaryForm').classList.remove('hidden');
 }
 
+// --- Tags ---
+let selectedCategory = '';
+
+function initTags() {
+    document.querySelectorAll('.tag').forEach(tag => {
+        tag.addEventListener('click', function () {
+            document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            selectedCategory = this.dataset.value;
+        });
+    });
+}
+
 // --- Expenses ---
 function addExpense(e) {
     e.preventDefault();
-    const desc = document.getElementById('expenseDesc').value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount').value);
-    const category = document.getElementById('expenseCategory').value;
     const date = document.getElementById('expenseDate').value;
 
-    if (!desc || !amount || !category || !date) return;
+    if (!selectedCategory || !amount || !date) return;
 
     const expenses = getData(currentMonth);
     expenses.push({
         id: Date.now(),
-        description: desc,
+        description: selectedCategory,
         amount: amount,
-        category: category,
+        category: selectedCategory,
         date: date
     });
     saveData(currentMonth, expenses);
 
     document.getElementById('expenseForm').reset();
     document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
+    document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+    selectedCategory = '';
 
     render();
     autoSaveCSV();
@@ -248,6 +261,7 @@ function render() {
 // --- Init ---
 document.addEventListener('DOMContentLoaded', function () {
     initMonthPicker();
+    initTags();
     render();
     autoSaveCSV();
 });
