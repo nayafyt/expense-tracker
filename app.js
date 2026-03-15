@@ -65,10 +65,11 @@ function addExpense(e) {
     e.preventDefault();
     const desc = document.getElementById('expenseDesc').value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount').value);
-    const category = document.getElementById('expenseCategory').value;
     const date = document.getElementById('expenseDate').value;
 
-    if (!desc || !amount || !category || !date) return;
+    if (!desc || !amount || !date) return;
+
+    const category = desc.toLowerCase();
 
     const expenses = getData(currentMonth);
     expenses.push({
