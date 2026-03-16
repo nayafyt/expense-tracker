@@ -216,6 +216,28 @@ select:focus {
     color: #fff;
 }
 
+.tag-add {
+    border-style: dashed;
+    color: #999;
+    font-size: 1.1rem;
+    padding: 8px 18px;
+}
+
+.tag-add:hover {
+    border-color: #4361ee;
+    color: #4361ee;
+}
+
+.tag-input {
+    padding: 8px 14px;
+    border: 2px solid #4361ee;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    outline: none;
+    width: 140px;
+}
+
 .form-row {
     display: flex;
     gap: 12px;

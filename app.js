@@ -63,15 +63,71 @@ function editSalary() {
 
 // --- Tags ---
 let selectedCategory = '';
+const defaultCategories = ['food', 'coffee', 'clothes', 'car utilities', 'revolut transfer', 'work'];
 
-function initTags() {
-    document.querySelectorAll('.tag').forEach(tag => {
+function getCustomCategories() {
+    const raw = localStorage.getItem('custom_categories');
+    return raw ? JSON.parse(raw) : [];
+}
+
+function saveCustomCategories(categories) {
+    localStorage.setItem('custom_categories', JSON.stringify(categories));
+}
+
+function getAllCategories() {
+    return [...defaultCategories, ...getCustomCategories()];
+}
+
+function renderTags() {
+    const container = document.getElementById('categoryTags');
+    const categories = getAllCategories();
+
+    container.innerHTML = categories.map(cat => {
+        const label = cat.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        const active = selectedCategory === cat ? ' active' : '';
+        return `<button type="button" class="tag${active}" data-value="${cat}">${label}</button>`;
+    }).join('') + '<button type="button" class="tag tag-add" id="addTagBtn">+</button>';
+
+    container.querySelectorAll('.tag:not(.tag-add)').forEach(tag => {
         tag.addEventListener('click', function () {
-            document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+            container.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             selectedCategory = this.dataset.value;
         });
     });
+
+    document.getElementById('addTagBtn').addEventListener('click', showAddTagInput);
+}
+
+function showAddTagInput() {
+    const btn = document.getElementById('addTagBtn');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tag-input';
+    input.placeholder = 'New category';
+    input.maxLength = 30;
+    btn.replaceWith(input);
+    input.focus();
+
+    function finalize() {
+        const value = input.value.trim().toLowerCase();
+        if (value && !getAllCategories().includes(value)) {
+            const custom = getCustomCategories();
+            custom.push(value);
+            saveCustomCategories(custom);
+        }
+        renderTags();
+    }
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); finalize(); }
+        if (e.key === 'Escape') renderTags();
+    });
+    input.addEventListener('blur', finalize);
+}
+
+function initTags() {
+    renderTags();
 }
 
 // --- Expenses ---
@@ -94,8 +150,8 @@ function addExpense(e) {
 
     document.getElementById('expenseForm').reset();
     document.getElementById('expenseDate').value = new Date().toISOString().slice(0, 10);
-    document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
     selectedCategory = '';
+    renderTags();
 
     render();
     autoSaveCSV();
